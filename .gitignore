@@ -1,0 +1,6 @@
+.env
+cache.db
+*.o
+leetcode_db
+sqlite-amalg.zip
+sqlite-amalgamation-*/

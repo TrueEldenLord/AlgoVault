@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeetCode DB</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+  <style>
+    :root {
+      --bg:       #0f0f0f;
+      --surface:  #1a1a1a;
+      --surface2: #222222;
+      --border:   #2d2d2d;
+      --text:     #eff1f6;
+      --muted:    #6b7280;
+      --muted2:   #9ca3af;
+      --easy:     #2cbb5d;
+      --medium:   #ffb800;
+      --hard:     #ef4743;
+      --accent:   #2cbb5d;
+      --radius:   10px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ── Navbar ─────────────────────────────────────────────── */
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(15,15,15,0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      height: 56px;
+      display: flex; align-items: center;
+      padding: 0 24px; gap: 14px;
+    }
+    .navbar-brand {
+      display: flex; align-items: center; gap: 9px;
+      font-weight: 700; font-size: 15px;
+      color: var(--text); text-decoration: none; flex-shrink: 0;
+    }
+    .brand-icon {
+      width: 28px; height: 28px; background: var(--accent);
+      border-radius: 7px; display: flex; align-items: center; justify-content: center;
+    }
+    .brand-icon svg { color: #0f0f0f; }
+    .navbar-tag {
+      font-size: 11px; color: var(--muted);
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 2px 8px; border-radius: 4px; letter-spacing: .02em;
+    }
+    .navbar-spacer { flex: 1; }
+    .btn-add {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 16px; background: var(--accent); color: #0f0f0f;
+      border: none; border-radius: 7px; font-size: 13px; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: filter .15s; flex-shrink: 0;
+    }
+    .btn-add:hover { filter: brightness(1.1); }
+
+    /* ── Page layout ────────────────────────────────────────── */
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    /* ── Sidebar ────────────────────────────────────────────── */
+    .sidebar {
+      width: 210px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 76px;
+    }
+    .sidebar-title {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .07em;
+      padding: 0 10px 10px;
+    }
+    .cat-list { display: flex; flex-direction: column; gap: 1px; }
+    .cat-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 10px; border-radius: 7px;
+      cursor: pointer; transition: background .12s;
+      font-size: 13px; color: var(--muted2);
+      border: 1px solid transparent;
+    }
+    .cat-item:hover { background: var(--surface); color: var(--text); }
+    .cat-item.active {
+      background: rgba(44,187,93,.1);
+      color: var(--accent);
+      border-color: rgba(44,187,93,.2);
+    }
+    .cat-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cat-count {
+      font-size: 11px; color: var(--muted);
+      background: var(--surface2); border-radius: 10px;
+      padding: 1px 7px; flex-shrink: 0; margin-left: 6px;
+    }
+    .cat-item.active .cat-count { background: rgba(44,187,93,.15); color: var(--accent); }
+
+    /* ── Main content ───────────────────────────────────────── */
+    .main { flex: 1; min-width: 0; }
+
+    /* ── Progress card ──────────────────────────────────────── */
+    .progress-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 22px;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 28px;
+    }
+    .progress-main { flex: 1; }
+    .progress-heading {
+      font-size: 12px; color: var(--muted2); font-weight: 500;
+      margin-bottom: 9px; text-transform: uppercase; letter-spacing: .06em;
+    }
+    .progress-bar-track {
+      height: 6px; background: var(--border); border-radius: 3px;
+      overflow: hidden; margin-bottom: 11px;
+    }
+    .progress-bar-fill {
+      height: 100%; background: var(--accent); border-radius: 3px;
+      transition: width .5s cubic-bezier(.4,0,.2,1);
+    }
+    .diff-stats { display: flex; gap: 18px; }
+    .diff-stat { display: flex; align-items: baseline; gap: 4px; font-size: 13px; }
+    .diff-stat-label { color: var(--muted); font-size: 12px; }
+    .diff-stat-count { font-weight: 700; }
+    .diff-stat-total { color: var(--muted); }
+    .diff-stat.easy   .diff-stat-count { color: var(--easy); }
+    .diff-stat.medium .diff-stat-count { color: var(--medium); }
+    .diff-stat.hard   .diff-stat-count { color: var(--hard); }
+    .progress-numbers { text-align: right; flex-shrink: 0; }
+    .progress-big { font-size: 34px; font-weight: 800; line-height: 1; color: var(--accent); }
+    .progress-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    /* ── Toolbar ────────────────────────────────────────────── */
+    .toolbar {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 12px; flex-wrap: wrap;
+    }
+    .filter-pills { display: flex; gap: 4px; }
+    .pill {
+      padding: 5px 13px; border-radius: 20px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--muted2); font-size: 13px; font-weight: 500;
+      font-family: inherit; cursor: pointer; transition: all .15s;
+    }
+    .pill:hover { color: var(--text); border-color: #555; }
+    .pill.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+    .pill.active.easy   { background: var(--easy);   color: #0f0f0f; border-color: var(--easy); }
+    .pill.active.medium { background: var(--medium); color: #0f0f0f; border-color: var(--medium); }
+    .pill.active.hard   { background: var(--hard);   color: #fff;    border-color: var(--hard); }
+    .search-wrap { flex: 1; min-width: 160px; position: relative; }
+    .search-icon {
+      position: absolute; left: 10px; top: 50%;
+      transform: translateY(-50%); color: var(--muted); pointer-events: none;
+    }
+    .search-input {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 7px; color: var(--text); font-size: 13px; font-family: inherit;
+      padding: 7px 12px 7px 32px; outline: none; transition: border-color .15s;
+    }
+    .search-input:focus { border-color: #555; }
+    .search-input::placeholder { color: var(--muted); }
+    .result-count { font-size: 12px; color: var(--muted); flex-shrink: 0; white-space: nowrap; }
+
+    /* ── Table ──────────────────────────────────────────────── */
+    .table-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 9px 14px; text-align: left;
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .07em;
+      background: var(--surface2); border-bottom: 1px solid var(--border);
+      cursor: pointer; user-select: none; white-space: nowrap; transition: color .15s;
+    }
+    thead th:hover { color: var(--muted2); }
+    thead th.sorted { color: var(--text); }
+    .sort-arrow { margin-left: 3px; font-size: 10px; opacity: .5; }
+    thead th.sorted .sort-arrow { opacity: 1; }
+    .th-noclick { cursor: default; }
+    .th-noclick:hover { color: var(--muted); }
+
+    tbody tr { border-top: 1px solid var(--border); transition: background .1s; }
+    tbody tr:first-child { border-top: none; }
+    tbody tr:hover { background: rgba(255,255,255,.03); }
+    tbody tr.solved { background: rgba(44,187,93,.05); }
+    tbody tr.solved:hover { background: rgba(44,187,93,.09); }
+
+    td { padding: 11px 14px; vertical-align: middle; }
+
+    .td-check { width: 40px; }
+    .check-btn {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 2px solid var(--border); background: transparent;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      padding: 0; transition: all .15s;
+    }
+    .check-btn:hover { border-color: var(--accent); background: rgba(44,187,93,.1); }
+    .check-btn.done { background: var(--accent); border-color: var(--accent); }
+    .check-btn svg { display: none; }
+    .check-btn.done svg { display: block; }
+
+    .td-id { width: 52px; color: var(--muted); font-size: 13px; }
+
+    .td-title .t-name {
+      font-weight: 500; font-size: 13.5px; display: block; margin-bottom: 4px;
+      color: var(--text); text-decoration: none; transition: color .15s;
+    }
+    .td-title .t-name:hover { color: var(--accent); }
+    .td-title .t-name.striked { text-decoration: line-through; color: var(--muted); }
+    .topic-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .topic-tag {
+      font-size: 11px; color: var(--muted2);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 4px; padding: 1px 6px;
+      cursor: pointer; transition: all .12s;
+    }
+    .topic-tag:hover { color: var(--accent); border-color: rgba(44,187,93,.4); }
+
+    .td-diff { width: 100px; }
+    .diff-badge {
+      display: inline-block; font-size: 12px; font-weight: 600;
+      padding: 3px 10px; border-radius: 12px;
+    }
+    .diff-badge.Easy   { color: var(--easy);   background: rgba(44,187,93,.12); }
+    .diff-badge.Medium { color: var(--medium);  background: rgba(255,184,0,.12); }
+    .diff-badge.Hard   { color: var(--hard);    background: rgba(239,71,67,.12); }
+
+    .td-action { width: 40px; text-align: right; }
+    .del-btn {
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; padding: 5px; border-radius: 5px;
+      display: inline-flex; align-items: center;
+      opacity: 0; transition: all .15s;
+    }
+    tbody tr:hover .del-btn { opacity: 1; }
+    .del-btn:hover { color: var(--hard); background: rgba(239,71,67,.1); }
+
+    .empty { text-align: center; padding: 52px 24px; color: var(--muted); }
+    .empty p { font-size: 15px; color: var(--muted2); margin-bottom: 6px; }
+
+    /* ── Modal ──────────────────────────────────────────────── */
+    .backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,.65);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .backdrop.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; width: 420px; max-width: calc(100vw - 32px);
+      padding: 24px; transform: translateY(-10px); transition: transform .2s;
+    }
+    .backdrop.open .modal { transform: translateY(0); }
+    .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 20px; }
+    .form-group { margin-bottom: 14px; }
+    .form-label {
+      display: block; font-size: 11px; font-weight: 600; color: var(--muted2);
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px;
+    }
+    .form-ctrl {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 7px; color: var(--text); font-size: 14px; font-family: inherit;
+      padding: 9px 12px; outline: none; transition: border-color .15s; appearance: none;
+    }
+    .form-ctrl:focus { border-color: #555; }
+    .form-ctrl::placeholder { color: var(--muted); }
+    select.form-ctrl {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center; cursor: pointer;
+    }
+    .err { font-size: 11px; color: var(--hard); margin-top: 4px; min-height: 16px; }
+    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+    .btn-cancel {
+      padding: 8px 16px; background: transparent; border: 1px solid var(--border);
+      border-radius: 7px; color: var(--muted2); font-size: 13px; font-family: inherit;
+      cursor: pointer; transition: all .15s;
+    }
+    .btn-cancel:hover { background: var(--surface2); color: var(--text); }
+    .btn-submit {
+      padding: 8px 20px; background: var(--accent); border: none; border-radius: 7px;
+      color: #0f0f0f; font-size: 13px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: filter .15s;
+    }
+    .btn-submit:hover { filter: brightness(1.08); }
+
+    /* ── Toast ──────────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 11px 16px; font-size: 13px; font-weight: 500;
+      display: flex; align-items: center; gap: 8px;
+      transform: translateY(60px); opacity: 0; transition: all .25s;
+      z-index: 9999; pointer-events: none;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.ok  { border-left: 3px solid var(--easy); }
+    .toast.err { border-left: 3px solid var(--hard); }
+    /* ── Problem Overlay ────────────────────────────────────── */
+    .problem-overlay {
+      position: fixed; inset: 0; z-index: 500;
+      background: var(--bg); display: none; flex-direction: column;
+    }
+    .problem-overlay.open { display: flex; }
+    .overlay-topbar {
+      height: 48px; flex-shrink: 0;
+      background: rgba(15,15,15,0.96); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 16px; gap: 12px;
+    }
+    .overlay-back {
+      background: none; border: none; color: var(--muted2); cursor: pointer;
+      display: flex; align-items: center; gap: 6px; font-size: 13px;
+      font-family: inherit; padding: 5px 8px; border-radius: 6px; transition: all .15s;
+    }
+    .overlay-back:hover { color: var(--text); background: var(--surface); }
+    .overlay-title { font-weight: 600; font-size: 14px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .overlay-lc-link {
+      font-size: 12px; color: var(--accent); text-decoration: none;
+      display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+      padding: 4px 10px; border: 1px solid rgba(44,187,93,.3);
+      border-radius: 6px; transition: all .15s;
+    }
+    .overlay-lc-link:hover { background: rgba(44,187,93,.1); }
+    .overlay-body { flex: 1; display: flex; overflow: hidden; }
+    .problem-desc {
+      width: 40%; flex-shrink: 0; border-right: 1px solid var(--border);
+      overflow-y: auto; padding: 20px 24px;
+    }
+    .problem-desc h1 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+    .problem-desc-content { font-size: 13.5px; line-height: 1.75; color: var(--muted2); }
+    .problem-desc-content p { margin-bottom: 12px; }
+    .problem-desc-content pre {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 10px 14px; overflow-x: auto;
+      font-size: 12.5px; margin: 10px 0; white-space: pre-wrap;
+    }
+    .problem-desc-content code {
+      background: var(--surface2); border-radius: 4px; padding: 1px 5px; font-size: 12px;
+    }
+    .desc-loading { color: var(--muted); font-size: 13px; padding: 8px 0; }
+    .problem-editor { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    .editor-toolbar {
+      height: 44px; flex-shrink: 0; border-bottom: 1px solid var(--border);
+      background: var(--surface); display: flex; align-items: center; padding: 0 12px; gap: 8px;
+    }
+    .lang-select {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-size: 12px; font-family: inherit;
+      padding: 4px 28px 4px 10px; cursor: pointer; outline: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 8px center; max-width: 200px;
+    }
+    .editor-spacer { flex: 1; }
+    .btn-run {
+      padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+      font-family: inherit; cursor: pointer; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text); transition: all .15s;
+    }
+    .btn-run:hover { border-color: #555; }
+    .btn-submit {
+      padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+      font-family: inherit; cursor: pointer; border: none;
+      background: var(--accent); color: #0f0f0f; transition: filter .15s;
+    }
+    .btn-submit:hover { filter: brightness(1.1); }
+    .btn-run:disabled, .btn-submit:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+    #monaco-container { flex: 1; min-height: 0; }
+    .results-strip {
+      border-top: 1px solid var(--border); background: var(--surface);
+      max-height: 220px; overflow-y: auto; padding: 10px 14px; font-size: 12px;
+    }
+    .result-case {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+    }
+    .result-case:last-child { border-bottom: none; }
+    .result-badge {
+      flex-shrink: 0; font-weight: 700; font-size: 11px;
+      padding: 2px 7px; border-radius: 10px; margin-top: 1px;
+    }
+    .result-badge.pass { background: rgba(44,187,93,.15); color: var(--easy); }
+    .result-badge.fail { background: rgba(239,71,67,.15);  color: var(--hard); }
+    .result-badge.err  { background: rgba(255,184,0,.15);  color: var(--medium); }
+    .result-detail { flex: 1; min-width: 0; }
+    .result-detail pre {
+      margin: 2px 0; font-size: 11px; color: var(--muted2);
+      white-space: pre-wrap; word-break: break-all;
+    }
+    .result-meta { font-size: 10px; color: var(--muted); margin-top: 3px; }
+    .results-summary { padding: 6px 0 8px; font-weight: 600; font-size: 13px; }
+    .results-summary.all-pass { color: var(--easy); }
+    .results-summary.has-fail { color: var(--hard); }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="#">
+    <div class="brand-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+      </svg>
+    </div>
+    LeetCode DB
+  </a>
+  <span class="navbar-tag">C++ · Linked List · Merge Sort</span>
+  <div class="navbar-spacer"></div>
+  <button class="btn-add" onclick="openModal()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+    Add Problem
+  </button>
+</nav>
+
+<div class="page">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Topics</div>
+    <div class="cat-list" id="catList"></div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Progress -->
+    <div class="progress-card">
+      <div class="progress-main">
+        <div class="progress-heading">Progress</div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="progBar" style="width:0%"></div>
+        </div>
+        <div class="diff-stats">
+          <div class="diff-stat easy">
+            <span class="diff-stat-count" id="easyDone">0</span>
+            <span class="diff-stat-total" id="easyTotal">/0</span>
+            <span class="diff-stat-label">Easy</span>
+          </div>
+          <div class="diff-stat medium">
+            <span class="diff-stat-count" id="medDone">0</span>
+            <span class="diff-stat-total" id="medTotal">/0</span>
+            <span class="diff-stat-label">Medium</span>
+          </div>
+          <div class="diff-stat hard">
+            <span class="diff-stat-count" id="hardDone">0</span>
+            <span class="diff-stat-total" id="hardTotal">/0</span>
+            <span class="diff-stat-label">Hard</span>
+          </div>
+        </div>
+      </div>
+      <div class="progress-numbers">
+        <div class="progress-big" id="progBig">0</div>
+        <div class="progress-sub" id="progSub">/ 0 solved</div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="filter-pills">
+        <button class="pill active" data-f="All"    onclick="setDiff('All')">All</button>
+        <button class="pill easy"   data-f="Easy"   onclick="setDiff('Easy')">Easy</button>
+        <button class="pill medium" data-f="Medium" onclick="setDiff('Medium')">Medium</button>
+        <button class="pill hard"   data-f="Hard"   onclick="setDiff('Hard')">Hard</button>
+      </div>
+      <div class="search-wrap">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input class="search-input" id="searchInput" type="text" placeholder="Search... ( / )" oninput="render()">
+      </div>
+      <span class="result-count" id="resultCount"></span>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th class="td-check th-noclick"></th>
+            <th class="td-id" onclick="setSort('id')">#<span class="sort-arrow" id="sa-id">↕</span></th>
+            <th onclick="setSort('name')">Title<span class="sort-arrow" id="sa-name">↕</span></th>
+            <th class="td-diff" onclick="setSort('difficulty')">Difficulty<span class="sort-arrow" id="sa-difficulty">↕</span></th>
+            <th class="td-action th-noclick"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- Problem Overlay -->
+<div class="problem-overlay" id="problemOverlay">
+  <div class="overlay-topbar">
+    <button class="overlay-back" onclick="closeProblem()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Problems
+    </button>
+    <span class="overlay-title" id="overlayTitle"></span>
+    <a class="overlay-lc-link" id="overlayLcLink" href="#" target="_blank" rel="noopener">
+      Open on LeetCode
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+        <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+      </svg>
+    </a>
+  </div>
+  <div class="overlay-body">
+    <div class="problem-desc" id="problemDesc">
+      <div class="desc-loading">Loading problem...</div>
+    </div>
+    <div class="problem-editor">
+      <div class="editor-toolbar">
+        <select class="lang-select" id="langSelect" onchange="onLangChange()">
+          <option value="cpp">C++ (loading...)</option>
+        </select>
+        <div class="editor-spacer"></div>
+        <button class="btn-run"    id="btnRun"    onclick="runCode()">Run</button>
+        <button class="btn-submit" id="btnSubmit" onclick="submitCode()">Submit</button>
+      </div>
+      <div id="monaco-container"></div>
+      <div class="results-strip" id="resultsStrip" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="backdrop" id="backdrop" onclick="bgClick(event)">
+  <div class="modal">
+    <div class="modal-title">Add Problem</div>
+    <div class="form-group">
+      <label class="form-label" for="fId">Problem #</label>
+      <input class="form-ctrl" id="fId" type="number" min="1" placeholder="e.g. 704">
+      <div class="err" id="eId"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="fName">Title</label>
+      <input class="form-ctrl" id="fName" type="text" placeholder="e.g. Binary Search">
+      <div class="err" id="eName"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="fDiff">Difficulty</label>
+      <select class="form-ctrl" id="fDiff">
+        <option value="Easy">Easy</option>
+        <option value="Medium" selected>Medium</option>
+        <option value="Hard">Hard</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="fTopic">Topic</label>
+      <select class="form-ctrl" id="fTopic">
+        <option value="Arrays & Hashing">Arrays & Hashing</option>
+        <option value="Two Pointers">Two Pointers</option>
+        <option value="Sliding Window">Sliding Window</option>
+        <option value="Stack">Stack</option>
+        <option value="Binary Search">Binary Search</option>
+        <option value="Linked List">Linked List</option>
+        <option value="Trees">Trees</option>
+        <option value="Heap / Priority Queue">Heap / Priority Queue</option>
+        <option value="Backtracking">Backtracking</option>
+        <option value="Graphs">Graphs</option>
+        <option value="Tries">Tries</option>
+        <option value="Advanced Graphs">Advanced Graphs</option>
+        <option value="1-D DP">1-D DP</option>
+        <option value="2-D DP">2-D DP</option>
+        <option value="Greedy">Greedy</option>
+        <option value="Intervals">Intervals</option>
+        <option value="Math & Geometry">Math & Geometry</option>
+        <option value="Bit Manipulation">Bit Manipulation</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-submit" onclick="submitAdd()">Add</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const CATEGORIES = [
+    'Arrays & Hashing','Two Pointers','Sliding Window','Stack',
+    'Binary Search','Linked List','Trees','Heap / Priority Queue',
+    'Backtracking','Graphs','Tries','Advanced Graphs','1-D DP','2-D DP',
+    'Greedy','Intervals','Math & Geometry','Bit Manipulation'
+  ];
+
+  let problems    = [];
+  let activeDiff  = 'All';
+  let activeTopic = null;   // null = all topics
+  let sortField   = 'id';
+  let sortDir     = 1;
+
+  // ── API ──────────────────────────────────────────────────────
+
+  async function load() {
+    try {
+      const r = await fetch('/api/problems');
+      problems = await r.json();
+      render();
+      renderSidebar();
+    } catch {
+      toast('Cannot reach server — is leetcode_db running?', 'err');
+    }
+  }
+
+  async function toggleSolved(id, current) {
+    const res = await fetch(`/api/problems/${id}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({solved: !current})
+    });
+    if (res.ok) {
+      const p = problems.find(p => p.id === id);
+      if (p) { p.solved = !current; render(); renderSidebar(); }
+    }
+  }
+
+  async function deleteProblem(id) {
+    const p = problems.find(p => p.id === id);
+    const name = p ? p.name : 'this problem';
+    if (!confirm(`Remove "${name}"?`)) return;
+    const res = await fetch(`/api/problems/${id}`, {method:'DELETE'});
+    if (res.ok) {
+      problems = problems.filter(p => p.id !== id);
+      render();
+      renderSidebar();
+      toast('Problem removed');
+    }
+  }
+
+  async function addProblem(id, name, difficulty, topics) {
+    const res = await fetch('/api/problems', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({id, name, difficulty, topics})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    problems.push(data);
+    render();
+    renderSidebar();
+  }
+
+  // ── Sidebar ──────────────────────────────────────────────────
+
+  function renderSidebar() {
+    const list = document.getElementById('catList');
+    const allActive = activeTopic === null;
+
+    const totalSolved = problems.filter(p => p.solved).length;
+    const allHtml = `<div class="cat-item ${allActive ? 'active' : ''}" onclick="setTopic(null)">
+      <span class="cat-label">All Topics</span>
+      <span class="cat-count">${totalSolved}/${problems.length}</span>
+    </div>`;
+
+    const catsHtml = CATEGORIES.map(cat => {
+      const inCat  = problems.filter(p => p.topics && p.topics.includes(cat));
+      if (inCat.length === 0) return '';
+      const solved = inCat.filter(p => p.solved).length;
+      const active = activeTopic === cat;
+      return `<div class="cat-item ${active ? 'active' : ''}" onclick="setTopic('${cat}')">
+        <span class="cat-label">${esc(cat)}</span>
+        <span class="cat-count">${solved}/${inCat.length}</span>
+      </div>`;
+    }).join('');
+
+    list.innerHTML = allHtml + catsHtml;
+  }
+
+  // ── Render ───────────────────────────────────────────────────
+
+  function visible() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    return problems
+      .filter(p => activeDiff === 'All' || p.difficulty === activeDiff)
+      .filter(p => !activeTopic || (p.topics && p.topics.includes(activeTopic)))
+      .filter(p => !q || p.name.toLowerCase().includes(q) || String(p.id).includes(q))
+      .sort((a, b) => {
+        const rank = {Easy:1, Medium:2, Hard:3};
+        const av = sortField === 'id' ? a.id
+                 : sortField === 'name' ? a.name.toLowerCase()
+                 : rank[a.difficulty];
+        const bv = sortField === 'id' ? b.id
+                 : sortField === 'name' ? b.name.toLowerCase()
+                 : rank[b.difficulty];
+        return av < bv ? -sortDir : av > bv ? sortDir : 0;
+      });
+  }
+
+  function render() {
+    const rows = visible();
+    const tbody = document.getElementById('tbody');
+    document.getElementById('resultCount').textContent =
+      rows.length !== problems.length ? `${rows.length} shown` : '';
+
+    tbody.innerHTML = rows.length === 0
+      ? `<tr><td colspan="5"><div class="empty"><p>No problems match</p><span>Try a different filter or search</span></div></td></tr>`
+      : rows.map(p => {
+          const tags = (p.topics || []).map(t =>
+            `<span class="topic-tag" onclick="setTopic('${t}')">${esc(t)}</span>`
+          ).join('');
+          return `<tr class="${p.solved ? 'solved' : ''}">
+            <td class="td-check">
+              <button class="check-btn ${p.solved ? 'done' : ''}"
+                      onclick="toggleSolved(${p.id}, ${p.solved})"
+                      title="${p.solved ? 'Mark unsolved' : 'Mark solved'}">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                     stroke="#0f0f0f" stroke-width="3.5">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </button>
+            </td>
+            <td class="td-id">${p.id}</td>
+            <td class="td-title">
+              <a class="t-name ${p.solved ? 'striked' : ''}" href="#" data-pid="${p.id}" data-pname="${esc(p.name)}" onclick="openProblem(+this.dataset.pid, this.dataset.pname); return false;">${esc(p.name)}</a>
+              ${tags ? `<div class="topic-tags">${tags}</div>` : ''}
+            </td>
+            <td class="td-diff"><span class="diff-badge ${p.difficulty}">${p.difficulty}</span></td>
+            <td class="td-action">
+              <button class="del-btn" onclick="deleteProblem(${p.id})" title="Remove">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+                </svg>
+              </button>
+            </td>
+          </tr>`;
+        }).join('');
+
+    updateStats();
+    updateSortUI();
+  }
+
+  function updateStats() {
+    const total  = problems.length;
+    const solved = problems.filter(p => p.solved).length;
+    const pct    = total ? Math.round(solved / total * 100) : 0;
+
+    document.getElementById('progBar').style.width = pct + '%';
+    document.getElementById('progBig').textContent = solved;
+    document.getElementById('progSub').textContent = `/ ${total} solved`;
+
+    for (const d of ['Easy','Medium','Hard']) {
+      const all  = problems.filter(p => p.difficulty === d);
+      const done = all.filter(p => p.solved).length;
+      const pre  = d === 'Easy' ? 'easy' : d === 'Medium' ? 'med' : 'hard';
+      document.getElementById(pre + 'Done').textContent  = done;
+      document.getElementById(pre + 'Total').textContent = `/${all.length}`;
+    }
+  }
+
+  function updateSortUI() {
+    for (const f of ['id','name','difficulty']) {
+      const el = document.getElementById('sa-' + f);
+      if (!el) continue;
+      el.textContent = sortField === f ? (sortDir === 1 ? '↑' : '↓') : '↕';
+      el.closest('th').classList.toggle('sorted', sortField === f);
+    }
+  }
+
+  // ── Controls ─────────────────────────────────────────────────
+
+  function setDiff(f) {
+    activeDiff = f;
+    document.querySelectorAll('.pill').forEach(el =>
+      el.classList.toggle('active', el.dataset.f === f));
+    render();
+  }
+
+  function setTopic(t) {
+    activeTopic = t;
+    renderSidebar();
+    render();
+  }
+
+  function setSort(field) {
+    sortDir = (sortField === field) ? -sortDir : 1;
+    sortField = field;
+    render();
+  }
+
+  // ── Modal ────────────────────────────────────────────────────
+
+  function openModal() {
+    ['fId','fName'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fDiff').value  = 'Medium';
+    document.getElementById('fTopic').value = 'Arrays & Hashing';
+    ['eId','eName'].forEach(id => document.getElementById(id).textContent = '');
+    document.getElementById('backdrop').classList.add('open');
+    setTimeout(() => document.getElementById('fId').focus(), 80);
+  }
+  function closeModal() { document.getElementById('backdrop').classList.remove('open'); }
+  function bgClick(e) { if (e.target === document.getElementById('backdrop')) closeModal(); }
+
+  async function submitAdd() {
+    let ok = true;
+    const id    = parseInt(document.getElementById('fId').value);
+    const name  = document.getElementById('fName').value.trim();
+    const diff  = document.getElementById('fDiff').value;
+    const topic = document.getElementById('fTopic').value;
+
+    document.getElementById('eId').textContent   = '';
+    document.getElementById('eName').textContent = '';
+
+    if (!id || id < 1) { document.getElementById('eId').textContent = 'Enter a valid problem number'; ok = false; }
+    if (!name)         { document.getElementById('eName').textContent = 'Title is required'; ok = false; }
+    if (!ok) return;
+
+    try {
+      await addProblem(id, name, diff, [topic]);
+      closeModal();
+      toast(`Added: ${name}`);
+    } catch (e) {
+      document.getElementById('eId').textContent = e.message;
+    }
+  }
+
+  // ── Toast ────────────────────────────────────────────────────
+
+  let _tt;
+  function toast(msg, type = 'ok') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `toast ${type} show`;
+    clearTimeout(_tt);
+    _tt = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+
+  function slug(name) {
+    return name.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-');
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Enter' && document.getElementById('backdrop').classList.contains('open')) submitAdd();
+    if (e.key === '/' && !['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) {
+      e.preventDefault(); document.getElementById('searchInput').focus();
+    }
+  });
+
+  load();
+
+  // Auto-fill title when problem # is entered in Add modal
+  document.getElementById('fId').addEventListener('blur', async function () {
+    const id = parseInt(this.value);
+    if (!id || id < 1) return;
+    if (document.getElementById('fName').value.trim()) return;
+    try {
+      const r = await fetch('/api/problems/' + id + '/meta');
+      if (!r.ok) return;
+      const meta = await r.json();
+      if (meta.title) {
+        document.getElementById('fName').value = meta.title;
+        if (meta.difficulty &&
+            ['Easy','Medium','Hard'].includes(meta.difficulty))
+          document.getElementById('fDiff').value = meta.difficulty;
+      }
+    } catch {}
+  });
+
+  // ── Run / Submit ─────────────────────────────────────────────
+
+  async function runCode() {
+    if (!monacoReady) return;
+    const code   = monacoEditor.getValue();
+    const langId = document.getElementById('langSelect').value;
+    const strip  = document.getElementById('resultsStrip');
+    const btnRun = document.getElementById('btnRun');
+    const btnSub = document.getElementById('btnSubmit');
+
+    strip.style.display = 'block';
+    if (currentExamples.length === 0) {
+      strip.innerHTML = '<div class="desc-loading">No test cases cached for this problem yet.</div>';
+      return;
+    }
+
+    btnRun.disabled = btnSub.disabled = true;
+    btnRun.textContent = 'Running...';
+    strip.innerHTML = '<div class="desc-loading">Running...</div>';
+
+    try {
+      const r = await fetch('/api/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, language_id: langId, stdin: currentExamples[0].input || '' })
+      });
+      const data = await r.json();
+      strip.innerHTML = buildResultHtml([{ ex: currentExamples[0], data }], false);
+    } catch (e) {
+      strip.innerHTML = '<div class="desc-loading">Network error: ' + esc(e.message) + '</div>';
+    } finally {
+      btnRun.disabled = btnSub.disabled = false;
+      btnRun.textContent = 'Run';
+    }
+  }
+
+  async function submitCode() {
+    if (!monacoReady) return;
+    const code   = monacoEditor.getValue();
+    const langId = document.getElementById('langSelect').value;
+    const strip  = document.getElementById('resultsStrip');
+    const btnRun = document.getElementById('btnRun');
+    const btnSub = document.getElementById('btnSubmit');
+
+    strip.style.display = 'block';
+    if (currentExamples.length === 0) {
+      strip.innerHTML = '<div class="desc-loading">No test cases available.</div>';
+      return;
+    }
+
+    btnRun.disabled = btnSub.disabled = true;
+    btnSub.textContent = 'Submitting...';
+    strip.innerHTML = '<div class="desc-loading">Running all test cases...</div>';
+
+    const results = [];
+    for (const ex of currentExamples) {
+      try {
+        const r = await fetch('/api/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, language_id: langId, stdin: ex.input || '' })
+        });
+        const data = await r.json();
+        results.push({ ex, data });
+      } catch (e) {
+        results.push({ ex, data: { error: e.message, status: { description: 'Network Error' } } });
+      }
+    }
+
+    strip.innerHTML = buildResultHtml(results, true);
+    btnRun.disabled = btnSub.disabled = false;
+    btnSub.textContent = 'Submit';
+  }
+
+  function buildResultHtml(results, showSummary) {
+    let html = '';
+    let passed = 0;
+
+    for (const { ex, data } of results) {
+      const stdout   = (data.stdout   || '').trim();
+      const expected = (ex.output     || '').trim();
+      const statusId = data.status?.id;
+      const isPass   = expected ? stdout === expected : statusId === 3;
+      const isErr    = statusId && statusId !== 3;
+      if (isPass) passed++;
+
+      html += `<div class="result-case">
+        <span class="result-badge ${isPass ? 'pass' : isErr ? 'err' : 'fail'}">
+          ${isPass ? '✓ Pass' : isErr ? esc(data.status?.description || 'Error') : '✗ Fail'}
+        </span>
+        <div class="result-detail">
+          ${ex.input          ? `<pre>Input: ${esc(ex.input)}</pre>`                                    : ''}
+          ${stdout            ? `<pre>Output: ${esc(stdout)}</pre>`                                     : ''}
+          ${expected          ? `<pre>Expected: ${esc(expected)}</pre>`                                 : ''}
+          ${data.stderr       ? `<pre style="color:var(--hard)">Stderr: ${esc(data.stderr)}</pre>`      : ''}
+          ${data.compile_output ? `<pre style="color:var(--medium)">Compile: ${esc(data.compile_output)}</pre>` : ''}
+          <div class="result-meta">${data.time ? data.time + 's' : ''}${data.memory ? ' · ' + data.memory + ' KB' : ''}</div>
+        </div>
+      </div>`;
+    }
+
+    const summary = showSummary
+      ? `<div class="results-summary ${passed === results.length ? 'all-pass' : 'has-fail'}">${passed} / ${results.length} test cases passed</div>`
+      : '';
+    return summary + html;
+  }
+
+  // ── Problem Overlay ──────────────────────────────────────────
+
+  let currentProblemId = null;
+  let currentExamples  = [];
+  let lcLanguages      = [];
+  let monacoEditor     = null;
+  let monacoReady      = false;
+
+  require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+  require(['vs/editor/editor.main'], function () {
+    monacoEditor = monaco.editor.create(document.getElementById('monaco-container'), {
+      value: '// Select a problem to start coding\n',
+      language: 'cpp',
+      theme: 'vs-dark',
+      fontSize: 14,
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      automaticLayout: true,
+    });
+    monacoReady = true;
+  });
+
+  const PRIMARY_LANGS = ['cpp', 'python3', 'java', 'javascript', 'typescript', 'python'];
+
+  async function loadLanguages() {
+    try {
+      const r = await fetch('/api/languages');
+      if (!r.ok) return;
+      const runtimes = await r.json();
+      if (!Array.isArray(runtimes) || runtimes.length === 0) return;
+      lcLanguages = runtimes.map(l => ({
+        id:   l.language + '/' + l.version,
+        name: l.language.charAt(0).toUpperCase() + l.language.slice(1) + ' (' + l.version + ')',
+        lang: l.language
+      }));
+      const primary = lcLanguages.filter(l => PRIMARY_LANGS.includes(l.lang));
+      const others  = lcLanguages.filter(l => !PRIMARY_LANGS.includes(l.lang));
+      // Sort primary by our preferred order
+      primary.sort((a, b) => PRIMARY_LANGS.indexOf(a.lang) - PRIMARY_LANGS.indexOf(b.lang));
+      const sel = document.getElementById('langSelect');
+      sel.innerHTML =
+        '<optgroup label="Common">' +
+        primary.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('') +
+        '</optgroup>' +
+        '<optgroup label="More Languages">' +
+        others.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('') +
+        '</optgroup>';
+      const cpp = lcLanguages.find(l => l.lang === 'cpp');
+      if (cpp) sel.value = cpp.id;
+      onLangChange();
+    } catch {}
+  }
+
+  function getMonacoLang(langId) {
+    const lang = (langId + '').split('/')[0].toLowerCase();
+    if (lang === 'cpp' || lang === 'c++')   return 'cpp';
+    if (lang === 'python')                   return 'python';
+    if (lang === 'javascript')               return 'javascript';
+    if (lang === 'typescript')               return 'typescript';
+    if (lang === 'java')                     return 'java';
+    if (lang === 'csharp' || lang === 'c#')  return 'csharp';
+    if (lang === 'go')                       return 'go';
+    if (lang === 'rust')                     return 'rust';
+    if (lang === 'ruby')                     return 'ruby';
+    if (lang === 'swift')                    return 'swift';
+    if (lang === 'kotlin')                   return 'kotlin';
+    return 'plaintext';
+  }
+
+  function onLangChange() {
+    if (!monacoReady) return;
+    const langId = document.getElementById('langSelect').value;
+    monaco.editor.setModelLanguage(monacoEditor.getModel(), getMonacoLang(langId));
+    if (currentProblemId) {
+      const name = document.getElementById('overlayTitle').textContent;
+      monacoEditor.setValue(getStarterCode(langId, name));
+    }
+  }
+
+  function titleToMethod(name) {
+    // "Two Sum" → "twoSum", "Valid Parentheses" → "validParentheses"
+    return name.split(/[\s\-\/]+/)
+      .filter(Boolean)
+      .map((w, i) => i === 0 ? w[0].toLowerCase() + w.slice(1) : w[0].toUpperCase() + w.slice(1))
+      .join('')
+      .replace(/[^a-zA-Z0-9]/g, '');
+  }
+
+  function getStarterCode(langId, problemName) {
+    const lang = (langId + '').split('/')[0].toLowerCase();
+    const fn   = titleToMethod(problemName);
+    const harness = {
+      python: `\n\n# ── Test harness (reads example input from Run) ──────────────\nimport sys as _sys\nfor _line in _sys.stdin.read().strip().split('\\n'):\n    print(_line)  # replace with: print(Solution().${fn}(...))\n`,
+      python3: `\n\n# ── Test harness (reads example input from Run) ──────────────\nimport sys as _sys\nfor _line in _sys.stdin.read().strip().split('\\n'):\n    print(_line)  # replace with: print(Solution().${fn}(...))\n`,
+    };
+    const starters = {
+      cpp:        `class Solution {\npublic:\n    // TODO: add params matching LeetCode signature\n    int ${fn}() {\n        \n    }\n};\n\n// To use Run: add a main() that calls your solution with the example input\n`,
+      python:     `class Solution:\n    def ${fn}(self):\n        pass\n` + (harness.python || ''),
+      python3:    `class Solution:\n    def ${fn}(self):\n        pass\n` + (harness.python3 || ''),
+      java:       `class Solution {\n    // TODO: add params matching LeetCode signature\n    public void ${fn}() {\n        \n    }\n}\n`,
+      javascript: `/**\n * @param {TODO} input\n * @return {TODO}\n */\nvar ${fn} = function(input) {\n    \n};\n\n// To use Run: call your function and console.log the result\n// console.log(${fn}(...));\n`,
+      typescript: `function ${fn}(/* TODO: params */): void {\n    \n};\n`,
+      go:         `func ${fn}() {\n    \n}\n`,
+      rust:       `impl Solution {\n    pub fn ${fn.replace(/([A-Z])/g, '_$1').toLowerCase()}() {\n        \n    }\n}\n`,
+    };
+    return starters[lang] || `// ${problemName}\n// Add params matching the LeetCode signature\n`;
+  }
+
+  async function openProblem(id, name) {
+    currentProblemId = id;
+    document.getElementById('overlayTitle').textContent = name;
+    document.getElementById('overlayLcLink').href = 'https://leetcode.com/problems/' + slug(name) + '/';
+    document.getElementById('problemDesc').innerHTML = '<div class="desc-loading">Loading description...</div>';
+    document.getElementById('resultsStrip').style.display = 'none';
+    document.getElementById('problemOverlay').classList.add('open');
+    if (monacoReady) monacoEditor.setValue(getStarterCode(document.getElementById('langSelect').value, name));
+    if (lcLanguages.length === 0) await loadLanguages();
+    try {
+      const r = await fetch('/api/problems/' + id + '/meta');
+      if (!r.ok) throw new Error('not found');
+      const meta = await r.json();
+      currentExamples = Array.isArray(meta.examples_json) ? meta.examples_json : [];
+      document.getElementById('problemDesc').innerHTML =
+        '<h1>' + esc(meta.title || name) + '</h1>' +
+        '<div class="problem-desc-content">' + (meta.description_html || '<p>No description available.</p>') + '</div>';
+    } catch {
+      document.getElementById('problemDesc').innerHTML =
+        '<div class="desc-loading">Could not load description — ' +
+        '<a class="overlay-lc-link" style="display:inline-flex" href="' +
+        document.getElementById('overlayLcLink').href +
+        '" target="_blank" rel="noopener">open on LeetCode ↗</a></div>';
+    }
+  }
+
+  function closeProblem() {
+    document.getElementById('problemOverlay').classList.remove('open');
+    currentProblemId = null;
+    currentExamples  = [];
+  }
+</script>
+</body>
+</html>
