@@ -1077,9 +1077,9 @@
     if (!monacoReady) return;
     const langId = document.getElementById('langSelect').value;
     monaco.editor.setModelLanguage(monacoEditor.getModel(), getMonacoLang(langId));
-    if (currentProblemId) {
+    if (currentProblemId && !editorDirty) {
       const name = document.getElementById('overlayTitle').textContent;
-      monacoEditor.setValue(getStarterCode(langId, name));
+      setEditorValue(getStarterCode(langId, name, currentExamples));
     }
   }
 
@@ -1192,18 +1192,23 @@
 
   async function openProblem(id, name) {
     currentProblemId = id;
+    currentExamples  = [];
+    editorDirty      = false;
     document.getElementById('overlayTitle').textContent = name;
     document.getElementById('overlayLcLink').href = 'https://leetcode.com/problems/' + slug(name) + '/';
     document.getElementById('problemDesc').innerHTML = '<div class="desc-loading">Loading description...</div>';
     document.getElementById('resultsStrip').style.display = 'none';
     document.getElementById('problemOverlay').classList.add('open');
-    if (monacoReady) monacoEditor.setValue(getStarterCode(document.getElementById('langSelect').value, name));
+    if (monacoReady) setEditorValue(getStarterCode(document.getElementById('langSelect').value, name, []));
     if (lcLanguages.length === 0) await loadLanguages();
     try {
       const r = await fetch('/api/problems/' + id + '/meta');
       if (!r.ok) throw new Error('not found');
       const meta = await r.json();
       currentExamples = Array.isArray(meta.examples_json) ? meta.examples_json : [];
+      if (monacoReady && !editorDirty) {
+        setEditorValue(getStarterCode(document.getElementById('langSelect').value, name, currentExamples));
+      }
       document.getElementById('problemDesc').innerHTML =
         '<h1>' + esc(meta.title || name) + '</h1>' +
         '<div class="problem-desc-content">' + (meta.description_html || '<p>No description available.</p>') + '</div>';
