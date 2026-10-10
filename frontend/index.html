@@ -998,6 +998,8 @@
   let lcLanguages      = [];
   let monacoEditor     = null;
   let monacoReady      = false;
+  let editorDirty      = false;   // true once user types; prevents overwriting their work
+  let _settingStarter  = false;   // suppresses dirty flag during programmatic setValue
 
   require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
   require(['vs/editor/editor.main'], function () {
@@ -1010,8 +1012,19 @@
       scrollBeyondLastLine: false,
       automaticLayout: true,
     });
+    monacoEditor.onDidChangeModelContent(function () {
+      if (!_settingStarter) editorDirty = true;
+    });
     monacoReady = true;
   });
+
+  // Use instead of monacoEditor.setValue() to avoid triggering editorDirty
+  function setEditorValue(code) {
+    _settingStarter = true;
+    monacoEditor.setValue(code);
+    _settingStarter = false;
+    editorDirty = false;
+  }
 
   const PRIMARY_LANGS = ['cpp', 'python3', 'java', 'javascript', 'typescript', 'python'];
 
