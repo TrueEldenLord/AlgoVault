@@ -1092,24 +1092,102 @@
       .replace(/[^a-zA-Z0-9]/g, '');
   }
 
-  function getStarterCode(langId, problemName) {
+  function getStarterCode(langId, name, examples) {
+    examples = examples || [];
     const lang = (langId + '').split('/')[0].toLowerCase();
-    const fn   = titleToMethod(problemName);
-    const harness = {
-      python: `\n\n# ── Test harness (reads example input from Run) ──────────────\nimport sys as _sys\nfor _line in _sys.stdin.read().strip().split('\\n'):\n    print(_line)  # replace with: print(Solution().${fn}(...))\n`,
-      python3: `\n\n# ── Test harness (reads example input from Run) ──────────────\nimport sys as _sys\nfor _line in _sys.stdin.read().strip().split('\\n'):\n    print(_line)  # replace with: print(Solution().${fn}(...))\n`,
-    };
-    const starters = {
-      cpp:        `class Solution {\npublic:\n    // TODO: add params matching LeetCode signature\n    int ${fn}() {\n        \n    }\n};\n\n// To use Run: add a main() that calls your solution with the example input\n`,
-      python:     `class Solution:\n    def ${fn}(self):\n        pass\n` + (harness.python || ''),
-      python3:    `class Solution:\n    def ${fn}(self):\n        pass\n` + (harness.python3 || ''),
-      java:       `class Solution {\n    // TODO: add params matching LeetCode signature\n    public void ${fn}() {\n        \n    }\n}\n`,
-      javascript: `/**\n * @param {TODO} input\n * @return {TODO}\n */\nvar ${fn} = function(input) {\n    \n};\n\n// To use Run: call your function and console.log the result\n// console.log(${fn}(...));\n`,
-      typescript: `function ${fn}(/* TODO: params */): void {\n    \n};\n`,
-      go:         `func ${fn}() {\n    \n}\n`,
-      rust:       `impl Solution {\n    pub fn ${fn.replace(/([A-Z])/g, '_$1').toLowerCase()}() {\n        \n    }\n}\n`,
-    };
-    return starters[lang] || `// ${problemName}\n// Add params matching the LeetCode signature\n`;
+    const fn   = titleToMethod(name);
+
+    const ex     = examples[0] || {};
+    const input  = (ex.input  || '').trim();
+    const output = (ex.output || '').trim();
+    const lines  = input ? input.split('\n') : [];
+
+    // ── Python / Python3 ─────────────────────────────────────
+    if (lang === 'python' || lang === 'python3') {
+      const base = 'class Solution:\n    def ' + fn + '(self):\n        pass\n';
+      if (!lines.length) return base;
+      const inputEsc = input.replace(/\\/g, '\\\\');
+      return base +
+        '\n# ── Example test ──────────────────────────────────────────────\n' +
+        'import ast as _ast\n' +
+        '_args = [_ast.literal_eval(l) for l in """' + inputEsc + '""".strip().split(\'\\n\')]\n' +
+        'print(Solution().' + fn + '(*_args))  # expected: ' + (output || '?') + '\n';
+    }
+
+    // ── JavaScript ───────────────────────────────────────────
+    if (lang === 'javascript') {
+      const base = 'var ' + fn + ' = function() {\n    \n};\n';
+      if (!lines.length) return base;
+      const inputEsc = input.replace(/\\/g, '\\\\').replace(/\n/g, '\\n');
+      return base +
+        '\n// ── Example test ──────────────────────────────────────────────\n' +
+        'var _args = "' + inputEsc + '".trim().split("\\n").map(function(l) { return JSON.parse(l); });\n' +
+        'console.log(' + fn + '.apply(null, _args));  // expected: ' + (output || '?') + '\n';
+    }
+
+    // ── C++ ──────────────────────────────────────────────────
+    if (lang === 'cpp') {
+      const commentBlock = lines.length
+        ? '// ── Example ──────────────────────────────────────────────\n' +
+          lines.map(function(l) { return '// ' + l; }).join('\n') + '\n' +
+          (output ? '// Expected: ' + output + '\n' : '')
+        : '';
+      return '#include <bits/stdc++.h>\nusing namespace std;\n\n' +
+        'class Solution {\npublic:\n    // TODO: add params matching LeetCode signature\n    int ' + fn + '() {\n        \n    }\n};\n\n' +
+        (commentBlock ? commentBlock + '\n' : '') +
+        'int main() {\n    Solution s;\n    // auto result = s.' + fn + '(...);\n    // cout << result << endl;\n    return 0;\n}\n';
+    }
+
+    // ── Java ─────────────────────────────────────────────────
+    if (lang === 'java') {
+      const commentBlock = lines.length
+        ? '    // ── Example ──────────────────────────────────────────────\n' +
+          lines.map(function(l) { return '    // ' + l; }).join('\n') + '\n' +
+          (output ? '    // Expected: ' + output + '\n' : '')
+        : '';
+      return 'class Solution {\n    // TODO: add params matching LeetCode signature\n    public void ' + fn + '() {\n        \n    }\n\n' +
+        (commentBlock ? commentBlock + '\n' : '') +
+        '    public static void main(String[] args) {\n        Solution s = new Solution();\n        // s.' + fn + '(...);\n    }\n}\n';
+    }
+
+    // ── TypeScript ───────────────────────────────────────────
+    if (lang === 'typescript') {
+      const commentBlock = lines.length
+        ? '\n// ── Example ──────────────────────────────────────────────\n' +
+          lines.map(function(l) { return '// ' + l; }).join('\n') + '\n' +
+          (output ? '// Expected: ' + output + '\n' : '')
+        : '';
+      return 'function ' + fn + '(/* TODO: params */): void {\n    \n};\n' + commentBlock;
+    }
+
+    // ── Go ───────────────────────────────────────────────────
+    if (lang === 'go') {
+      const commentBlock = lines.length
+        ? '\n// ── Example ──────────────────────────────────────────────\n' +
+          lines.map(function(l) { return '// ' + l; }).join('\n') + '\n' +
+          (output ? '// Expected: ' + output + '\n' : '')
+        : '';
+      return 'func ' + fn + '() {\n    \n}\n' + commentBlock;
+    }
+
+    // ── Rust ─────────────────────────────────────────────────
+    if (lang === 'rust') {
+      const snakeFn = fn.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '');
+      const commentBlock = lines.length
+        ? '\n// ── Example ──────────────────────────────────────────────\n' +
+          lines.map(function(l) { return '// ' + l; }).join('\n') + '\n' +
+          (output ? '// Expected: ' + output + '\n' : '')
+        : '';
+      return 'impl Solution {\n    pub fn ' + snakeFn + '() {\n        \n    }\n}\n' + commentBlock;
+    }
+
+    // ── Fallback ─────────────────────────────────────────────
+    const commentBlock = lines.length
+      ? '\n// ── Example ──────────────────────────────────────────────\n' +
+        lines.map(function(l) { return '// ' + l; }).join('\n') + '\n' +
+        (output ? '// Expected: ' + output + '\n' : '')
+      : '';
+    return '// ' + name + '\n// Add params matching the LeetCode signature\n' + commentBlock;
   }
 
   async function openProblem(id, name) {
