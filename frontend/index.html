@@ -407,6 +407,43 @@
     .results-summary { padding: 6px 0 8px; font-weight: 600; font-size: 13px; }
     .results-summary.all-pass { color: var(--easy); }
     .results-summary.has-fail { color: var(--hard); }
+
+    /* ── Overlay tabs ───────────────────────────────────────── */
+    .desc-tabs {
+      display: flex; border-bottom: 1px solid var(--border);
+      margin: -20px -24px 16px; padding: 0 24px; flex-shrink: 0;
+    }
+    .desc-tab {
+      background: none; border: none; border-bottom: 2px solid transparent;
+      color: var(--muted2); font-size: 13px; font-weight: 500;
+      font-family: inherit; padding: 10px 14px; cursor: pointer;
+      transition: color .15s, border-color .15s; margin-bottom: -1px;
+    }
+    .desc-tab:hover { color: var(--text); }
+    .desc-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── Details panel ──────────────────────────────────────── */
+    .details-panel { padding: 4px 0; }
+    .detail-row {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+    }
+    .detail-row:last-of-type { border-bottom: none; }
+    .detail-label {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .06em;
+      width: 76px; flex-shrink: 0; padding-top: 2px;
+    }
+    .detail-value { font-size: 13px; color: var(--text); }
+    .details-lc-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 20px; padding: 8px 16px;
+      background: rgba(245,197,66,.1); color: var(--accent);
+      border: 1px solid rgba(245,197,66,.3); border-radius: 7px;
+      text-decoration: none; font-size: 13px; font-weight: 600;
+      transition: background .15s;
+    }
+    .details-lc-btn:hover { background: rgba(245,197,66,.18); }
   </style>
 </head>
 <body>
@@ -516,17 +553,16 @@
       Problems
     </button>
     <span class="overlay-title" id="overlayTitle"></span>
-    <a class="overlay-lc-link" id="overlayLcLink" href="#" target="_blank" rel="noopener">
-      Open on LeetCode
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-        <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-      </svg>
-    </a>
+
   </div>
   <div class="overlay-body">
     <div class="problem-desc" id="problemDesc">
-      <div class="desc-loading">Loading problem...</div>
+      <div class="desc-tabs">
+        <button class="desc-tab active" id="tabDesc"    onclick="switchTab('description')">Description</button>
+        <button class="desc-tab"        id="tabDetails" onclick="switchTab('details')">Details</button>
+      </div>
+      <div id="paneDescription"><div class="desc-loading">Loading problem...</div></div>
+      <div id="paneDetails" style="display:none"></div>
     </div>
     <div class="problem-editor">
       <div class="editor-toolbar">
@@ -993,8 +1029,10 @@
 
   // ── Problem Overlay ──────────────────────────────────────────
 
-  let currentProblemId = null;
-  let currentExamples  = [];
+  let currentProblemId   = null;
+  let currentExamples    = [];
+  let currentProblemMeta = null;
+  let overlayTab         = 'description';
   let lcLanguages      = [];
   let monacoEditor     = null;
   let monacoReady      = false;
@@ -1190,41 +1228,85 @@
     return '// ' + name + '\n// Add params matching the LeetCode signature\n' + commentBlock;
   }
 
+  function switchTab(tab) {
+    overlayTab = tab;
+    document.getElementById('paneDescription').style.display = tab === 'description' ? 'block' : 'none';
+    document.getElementById('paneDetails').style.display     = tab === 'details'     ? 'block' : 'none';
+    document.getElementById('tabDesc').classList.toggle('active',    tab === 'description');
+    document.getElementById('tabDetails').classList.toggle('active', tab === 'details');
+  }
+
+  function buildDetailsPane(meta) {
+    const topics = (meta.topics || []).map(function(t) {
+      return '<span class="topic-tag" onclick="setTopic(\'' + t + '\')">' + esc(t) + '</span>';
+    }).join('');
+    return '<div class="details-panel">' +
+      '<div class="detail-row"><span class="detail-label">Difficulty</span>' +
+        '<span class="diff-badge ' + esc(meta.difficulty) + '">' + esc(meta.difficulty) + '</span></div>' +
+      '<div class="detail-row"><span class="detail-label">Problem</span>' +
+        '<span class="detail-value">#' + meta.id + '</span></div>' +
+      '<div class="detail-row"><span class="detail-label">Topics</span>' +
+        '<div class="topic-tags">' + (topics || '<span style="color:var(--muted);font-size:12px">None</span>') + '</div></div>' +
+      '<a class="details-lc-btn" href="' + esc(meta.lcUrl) + '" target="_blank" rel="noopener">' +
+        'Open on LeetCode ' +
+        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">' +
+          '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>' +
+          '<polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>' +
+        '</svg></a>' +
+    '</div>';
+  }
+
   async function openProblem(id, name) {
-    currentProblemId = id;
-    currentExamples  = [];
-    editorDirty      = false;
+    currentProblemId   = id;
+    currentExamples    = [];
+    editorDirty        = false;
+
+    const localP = problems.find(function(p) { return p.id === id; });
+    currentProblemMeta = {
+      id:         id,
+      title:      name,
+      difficulty: localP ? localP.difficulty : '',
+      topics:     localP ? (localP.topics || []) : [],
+      lcUrl:      'https://leetcode.com/problems/' + slug(name) + '/'
+    };
+
     document.getElementById('overlayTitle').textContent = name;
-    document.getElementById('overlayLcLink').href = 'https://leetcode.com/problems/' + slug(name) + '/';
-    document.getElementById('problemDesc').innerHTML = '<div class="desc-loading">Loading description...</div>';
     document.getElementById('resultsStrip').style.display = 'none';
     document.getElementById('problemOverlay').classList.add('open');
+
+    switchTab('description');
+    document.getElementById('paneDescription').innerHTML = '<div class="desc-loading">Loading description...</div>';
+    document.getElementById('paneDetails').innerHTML = buildDetailsPane(currentProblemMeta);
+
     if (monacoReady) setEditorValue(getStarterCode(document.getElementById('langSelect').value, name, []));
     if (lcLanguages.length === 0) await loadLanguages();
+
     try {
       const r = await fetch('/api/problems/' + id + '/meta');
       if (!r.ok) throw new Error('not found');
       const meta = await r.json();
       currentExamples = Array.isArray(meta.examples_json) ? meta.examples_json : [];
+      if (meta.title) currentProblemMeta.title = meta.title;
+      document.getElementById('paneDetails').innerHTML = buildDetailsPane(currentProblemMeta);
       if (monacoReady && !editorDirty) {
         setEditorValue(getStarterCode(document.getElementById('langSelect').value, name, currentExamples));
       }
-      document.getElementById('problemDesc').innerHTML =
+      document.getElementById('paneDescription').innerHTML =
         '<h1>' + esc(meta.title || name) + '</h1>' +
         '<div class="problem-desc-content">' + (meta.description_html || '<p>No description available.</p>') + '</div>';
     } catch {
-      document.getElementById('problemDesc').innerHTML =
+      document.getElementById('paneDescription').innerHTML =
         '<div class="desc-loading">Could not load description — ' +
-        '<a class="overlay-lc-link" style="display:inline-flex" href="' +
-        document.getElementById('overlayLcLink').href +
+        '<a class="details-lc-btn" style="display:inline-flex;margin-top:8px" href="' + esc(currentProblemMeta.lcUrl) +
         '" target="_blank" rel="noopener">open on LeetCode ↗</a></div>';
     }
   }
 
   function closeProblem() {
     document.getElementById('problemOverlay').classList.remove('open');
-    currentProblemId = null;
-    currentExamples  = [];
+    currentProblemId   = null;
+    currentExamples    = [];
+    currentProblemMeta = null;
   }
 </script>
 </body>
