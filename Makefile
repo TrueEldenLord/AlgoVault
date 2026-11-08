@@ -6,7 +6,7 @@ TARGET   = leetcode_db
 OBJS     = main.o LinkedList.o sqlite3.o
 
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) -ldl
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) -ldl -static-libstdc++ -static-libgcc
 
 main.o: main.cpp LinkedList.h Problem.h sqlite3.h httplib.h
 	$(CXX) $(CXXFLAGS) -c main.cpp -o main.o
