@@ -685,11 +685,11 @@ int main() {
               << "╔══════════════════════════════════════╗\n"
               << "║     LeetCode Problem Database        ║\n"
               << "║                                      ║\n"
-              << "║     http://localhost:8080            ║\n"
+              << "║     http://localhost:8000            ║\n"
               << "╚══════════════════════════════════════╝\n"
               << "\033[0m"
               << "\033[2mCtrl+C to stop.\033[0m\n\n";
 
-    svr.listen("0.0.0.0", 8080);
+    svr.listen("0.0.0.0", 8000);
     return 0;
 }
